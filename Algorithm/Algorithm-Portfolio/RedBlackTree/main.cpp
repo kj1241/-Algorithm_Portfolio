@@ -8,7 +8,8 @@ enum RBTColor { RED, BLACK };
 
 typedef int ElementType;
 
-struct RBTNode {
+struct RBTNode 
+{
     ElementType Data;
     RBTColor Color;
     RBTNode* Parent;
@@ -18,16 +19,19 @@ struct RBTNode {
 
 RBTNode* Nil = new RBTNode{ 0, BLACK, nullptr, nullptr, nullptr };
 
-RBTNode* RBT_CreateNode(ElementType NewData) {
+RBTNode* RBT_CreateNode(ElementType NewData)
+{
     RBTNode* NewNode = new RBTNode{ NewData, BLACK, nullptr, Nil, Nil };
     return NewNode;
 }
 
-void RBT_DestroyNode(RBTNode* Node) {
+void RBT_DestroyNode(RBTNode* Node)
+{
     delete Node;
 }
 
-void RBT_DestroyTree(RBTNode* Tree) {
+void RBT_DestroyTree(RBTNode* Tree)
+{
     if (Tree == Nil) return;
 
     if (Tree->Right != Nil)
@@ -42,7 +46,8 @@ void RBT_DestroyTree(RBTNode* Tree) {
     RBT_DestroyNode(Tree);
 }
 
-RBTNode* RBT_SearchNode(RBTNode* Tree, ElementType Target) {
+RBTNode* RBT_SearchNode(RBTNode* Tree, ElementType Target) 
+{
     if (Tree == Nil)
         return nullptr;
 
@@ -54,7 +59,8 @@ RBTNode* RBT_SearchNode(RBTNode* Tree, ElementType Target) {
         return Tree;
 }
 
-RBTNode* RBT_SearchMinNode(RBTNode* Tree) {
+RBTNode* RBT_SearchMinNode(RBTNode* Tree)
+{
     if (Tree == Nil)
         return Nil;
 
@@ -64,7 +70,8 @@ RBTNode* RBT_SearchMinNode(RBTNode* Tree) {
         return RBT_SearchMinNode(Tree->Left);
 }
 
-void RBT_InsertNodeHelper(RBTNode*& Tree, RBTNode* NewNode) {
+void RBT_InsertNodeHelper(RBTNode*& Tree, RBTNode* NewNode) 
+{
     if (Tree == Nil) {
         Tree = NewNode;
         NewNode->Parent = nullptr;
@@ -89,7 +96,8 @@ void RBT_InsertNodeHelper(RBTNode*& Tree, RBTNode* NewNode) {
     }
 }
 
-void RBT_RotateRight(RBTNode*& Root, RBTNode* Parent) {
+void RBT_RotateRight(RBTNode*& Root, RBTNode* Parent) 
+{
     RBTNode* LeftChild = Parent->Left;
     Parent->Left = LeftChild->Right;
 
@@ -109,7 +117,8 @@ void RBT_RotateRight(RBTNode*& Root, RBTNode* Parent) {
     Parent->Parent = LeftChild;
 }
 
-void RBT_RotateLeft(RBTNode*& Root, RBTNode* Parent) {
+void RBT_RotateLeft(RBTNode*& Root, RBTNode* Parent) 
+{
     RBTNode* RightChild = Parent->Right;
     Parent->Right = RightChild->Left;
 
@@ -129,9 +138,12 @@ void RBT_RotateLeft(RBTNode*& Root, RBTNode* Parent) {
     Parent->Parent = RightChild;
 }
 
-void RBT_RebuildAfterInsert(RBTNode*& Root, RBTNode* X) {
-    while (X != Root && X->Parent->Color == RED) {
-        if (X->Parent == X->Parent->Parent->Left) {
+void RBT_RebuildAfterInsert(RBTNode*& Root, RBTNode* X) 
+{
+    while (X != Root && X->Parent->Color == RED) 
+    {
+        if (X->Parent == X->Parent->Parent->Left) 
+        {
             RBTNode* Uncle = X->Parent->Parent->Right;
             if (Uncle->Color == RED) {
                 X->Parent->Color = BLACK;
@@ -139,8 +151,10 @@ void RBT_RebuildAfterInsert(RBTNode*& Root, RBTNode* X) {
                 X->Parent->Parent->Color = RED;
                 X = X->Parent->Parent;
             }
-            else {
-                if (X == X->Parent->Right) {
+            else 
+            {
+                if (X == X->Parent->Right) 
+                {
                     X = X->Parent;
                     RBT_RotateLeft(Root, X);
                 }
@@ -149,7 +163,8 @@ void RBT_RebuildAfterInsert(RBTNode*& Root, RBTNode* X) {
                 RBT_RotateRight(Root, X->Parent->Parent);
             }
         }
-        else {
+        else 
+        {
             RBTNode* Uncle = X->Parent->Parent->Left;
             if (Uncle->Color == RED) {
                 X->Parent->Color = BLACK;
@@ -157,7 +172,8 @@ void RBT_RebuildAfterInsert(RBTNode*& Root, RBTNode* X) {
                 X->Parent->Parent->Color = RED;
                 X = X->Parent->Parent;
             }
-            else {
+            else 
+            {
                 if (X == X->Parent->Left) {
                     X = X->Parent;
                     RBT_RotateRight(Root, X);
@@ -171,7 +187,8 @@ void RBT_RebuildAfterInsert(RBTNode*& Root, RBTNode* X) {
     Root->Color = BLACK;
 }
 
-void RBT_InsertNode(RBTNode*& Tree, RBTNode* NewNode) {
+void RBT_InsertNode(RBTNode*& Tree, RBTNode* NewNode) 
+{
     RBT_InsertNodeHelper(Tree, NewNode);
     NewNode->Color = RED;
     NewNode->Left = Nil;
@@ -179,11 +196,14 @@ void RBT_InsertNode(RBTNode*& Tree, RBTNode* NewNode) {
     RBT_RebuildAfterInsert(Tree, NewNode);
 }
 
-void RBT_RebuildAfterRemove(RBTNode*& Root, RBTNode* Successor) {
+void RBT_RebuildAfterRemove(RBTNode*& Root, RBTNode* Successor)
+{
     RBTNode* Sibling = nullptr;
 
-    while (Successor != Root && Successor->Color == BLACK) {
-        if (Successor == Successor->Parent->Left) {
+    while (Successor != Root && Successor->Color == BLACK) 
+    {
+        if (Successor == Successor->Parent->Left)
+        {
             Sibling = Successor->Parent->Right;
 
             if (Sibling->Color == RED) {
@@ -192,12 +212,15 @@ void RBT_RebuildAfterRemove(RBTNode*& Root, RBTNode* Successor) {
                 RBT_RotateLeft(Root, Successor->Parent);
                 Sibling = Successor->Parent->Right;
             }
-            if (Sibling->Left->Color == BLACK && Sibling->Right->Color == BLACK) {
+            if (Sibling->Left->Color == BLACK && Sibling->Right->Color == BLACK) 
+            {
                 Sibling->Color = RED;
                 Successor = Successor->Parent;
             }
-            else {
-                if (Sibling->Right->Color == BLACK) {
+            else 
+            {
+                if (Sibling->Right->Color == BLACK) 
+                {
                     Sibling->Left->Color = BLACK;
                     Sibling->Color = RED;
                     RBT_RotateRight(Root, Sibling);
@@ -213,18 +236,22 @@ void RBT_RebuildAfterRemove(RBTNode*& Root, RBTNode* Successor) {
         else {
             Sibling = Successor->Parent->Left;
 
-            if (Sibling->Color == RED) {
+            if (Sibling->Color == RED)
+            {
                 Sibling->Color = BLACK;
                 Successor->Parent->Color = RED;
                 RBT_RotateRight(Root, Successor->Parent);
                 Sibling = Successor->Parent->Left;
             }
-            if (Sibling->Right->Color == BLACK && Sibling->Left->Color == BLACK) {
+            if (Sibling->Right->Color == BLACK && Sibling->Left->Color == BLACK)
+            {
                 Sibling->Color = RED;
                 Successor = Successor->Parent;
             }
-            else {
-                if (Sibling->Left->Color == BLACK) {
+            else 
+            {
+                if (Sibling->Left->Color == BLACK)
+                {
                     Sibling->Right->Color = BLACK;
                     Sibling->Color = RED;
                     RBT_RotateLeft(Root, Sibling);
@@ -242,7 +269,8 @@ void RBT_RebuildAfterRemove(RBTNode*& Root, RBTNode* Successor) {
     Successor->Color = BLACK;
 }
 
-RBTNode* RBT_RemoveNode(RBTNode*& Root, ElementType Data) {
+RBTNode* RBT_RemoveNode(RBTNode*& Root, ElementType Data) 
+{
     RBTNode* Removed = nullptr;
     RBTNode* Successor = nullptr;
     RBTNode* Target = RBT_SearchNode(Root, Data);
@@ -250,7 +278,8 @@ RBTNode* RBT_RemoveNode(RBTNode*& Root, ElementType Data) {
     if (Target == nullptr)
         return nullptr;
 
-    if (Target->Left == Nil || Target->Right == Nil) {
+    if (Target->Left == Nil || Target->Right == Nil) 
+    {
         Removed = Target;
     }
     else {
@@ -261,13 +290,16 @@ RBTNode* RBT_RemoveNode(RBTNode*& Root, ElementType Data) {
     Successor = (Removed->Left != Nil) ? Removed->Left : Removed->Right;
     Successor->Parent = Removed->Parent;
 
-    if (Removed->Parent == nullptr) {
+    if (Removed->Parent == nullptr) 
+    {
         Root = Successor;
     }
-    else if (Removed == Removed->Parent->Left) {
+    else if (Removed == Removed->Parent->Left)
+    {
         Removed->Parent->Left = Successor;
     }
-    else {
+    else 
+    {
         Removed->Parent->Right = Successor;
     }
 
@@ -279,7 +311,8 @@ RBTNode* RBT_RemoveNode(RBTNode*& Root, ElementType Data) {
 
 
 
-void RBT_PrintTree(RBTNode* Node, int Depth, int BlackCount) {
+void RBT_PrintTree(RBTNode* Node, int Depth, int BlackCount) 
+{
     if (Node == Nil)
         return;
 
@@ -299,10 +332,12 @@ void RBT_PrintTree(RBTNode* Node, int Depth, int BlackCount) {
     RBT_PrintTree(Node->Right, Depth + 1, BlackCount);
 }
 
-int main() {
+int main() 
+{
     RBTNode* Tree = Nil;
 
-    while (true) {
+    while (true) 
+    {
         int cmd = 0;
         int param = 0;
 
@@ -313,23 +348,27 @@ int main() {
 
         cin >> cmd;
 
-        if (cmd < 1 || cmd > 5) {
+        if (cmd < 1 || cmd > 5) 
+        {
             cout << "Invalid command number.\n";
             continue;
         }
-        else if (cmd == 4) {
+        else if (cmd == 4) 
+        {
             RBT_PrintTree(Tree, 0, 0);
             cout << endl;
             continue;
         }
-        else if (cmd == 5) {
+        else if (cmd == 5) 
+        {
             break;
         }
 
         cout << "Enter parameter (1~200) :\n";
         cin >> param;
 
-        if (param < 1 || param > 200) {
+        if (param < 1 || param > 200) 
+        {
             cout << "Invalid parameter." << param << endl;
             continue;
         }
@@ -367,70 +406,3 @@ int main() {
     return 0;
 }
 
-/*
-
-C++로 변환된 코드의 주요 함수에 대해 설명하겠습니다. 코드의 각 함수는 레드-블랙 트리의 노드 생성, 삽입, 삭제, 검색, 회전 및 균형 조정을 수행합니다.
-
-RBT_CreateNode
-
-새로운 노드를 생성합니다.
-매개변수: 새 노드의 데이터.
-반환값: 새로 생성된 노드의 포인터.
-RBT_DestroyNode
-
-노드를 삭제합니다.
-매개변수: 삭제할 노드의 포인터.
-RBT_DestroyTree
-
-트리를 후위 순회하며 모든 노드를 삭제합니다.
-매개변수: 트리의 루트 노드.
-RBT_SearchNode
-
-트리에서 특정 데이터를 가진 노드를 검색합니다.
-매개변수: 트리의 루트 노드, 검색할 데이터.
-반환값: 찾은 노드의 포인터 (없으면 nullptr).
-RBT_SearchMinNode
-
-트리에서 가장 작은 데이터를 가진 노드를 검색합니다.
-매개변수: 트리의 루트 노드.
-반환값: 가장 작은 데이터를 가진 노드의 포인터.
-RBT_InsertNodeHelper
-
-트리에 노드를 삽입하는 헬퍼 함수.
-매개변수: 트리의 루트 노드, 삽입할 새 노드.
-RBT_RotateRight
-
-오른쪽으로 회전하여 트리의 균형을 맞춥니다.
-매개변수: 트리의 루트 노드, 회전할 부모 노드.
-RBT_RotateLeft
-
-왼쪽으로 회전하여 트리의 균형을 맞춥니다.
-매개변수: 트리의 루트 노드, 회전할 부모 노드.
-RBT_RebuildAfterInsert
-
-삽입 후 트리의 균형을 재조정합니다.
-매개변수: 트리의 루트 노드, 삽입된 노드.
-RBT_InsertNode
-
-노드를 트리에 삽입하고 균형을 맞춥니다.
-매개변수: 트리의 루트 노드, 삽입할 새 노드.
-RBT_RemoveNode
-
-트리에서 노드를 제거하고 균형을 맞춥니다.
-매개변수: 트리의 루트 노드, 제거할 데이터.
-반환값: 제거된 노드의 포인터.
-RBT_RebuildAfterRemove
-
-제거 후 트리의 균형을 재조정합니다.
-매개변수: 트리의 루트 노드, 제거 후의 후속 노드.
-RBT_PrintTree
-
-트리를 깊이 우선 탐색하며 출력합니다.
-매개변수: 출력할 트리의 루트 노드, 현재 깊이, 블랙 노드의 수.
-main
-
-사용자로부터 입력을 받아 트리를 조작합니다.
-트리에 노드를 삽입, 삭제, 검색하며, 트리의 상태를 출력합니다.
-
-이와 같은 함수들을 통해 레드-블랙 트리를 구현하고 사용할 수 있습니다. 각 함수는 트리의 특정 동작을 수행하며, 트리의 균형과 성능을 유지하는 역할을 합니다.
-*/
