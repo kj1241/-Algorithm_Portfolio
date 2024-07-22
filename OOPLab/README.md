@@ -52,7 +52,7 @@ For more details information, visit: [https://kj1241.github.io/algorithm/OOPLab]
 
 ### Key Points Covered:
 - **shoout_2010:** 
-  ![Simple Console Shooting Game](img/Simple Console Shooting Game.webp)
+  ![Simple Console Shooting Game](img/Simple%20Console%20Shooting%20Game.webp)
 
 ### Description:
 In this video, I present a simple console shooting game developed using C++. Players control characters, shoot projectiles, and try to hit their opponent. The video demonstrates the basic game play and controls.
