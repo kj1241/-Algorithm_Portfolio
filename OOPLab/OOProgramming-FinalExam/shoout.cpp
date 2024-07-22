@@ -1,9 +1,9 @@
-// Author: Kev J.
-
-
 #include <stdlib.h>
 #include <windows.h>
 #include <iostream>
+#include <conio.h> // For _kbhit() and _getch()
+#include <vector>
+
 using namespace std;
 
 #define VK_A 0x41
@@ -34,473 +34,257 @@ using namespace std;
 #define VK_Z 0x5A
 
 struct GAMEINFO {
-	COORD PlayerOnePosition;
-	COORD PlayerTwoPosition;
-	COORD PlayerOneBullet;
-	COORD PlayerTwoBullet;
-	COORD PlayerOneBullet2;
-	COORD PlayerTwoBullet2;
-	COORD ZeroZero;
+    COORD PlayerOnePosition;
+    COORD PlayerTwoPosition;
+    vector<COORD> PlayerOneBullets;
+    vector<COORD> PlayerTwoBullets;
+    COORD ZeroZero;
+    bool PlayerOneShield;
+    bool PlayerTwoShield;
+    bool PlayerOneShieldUsed;
+    bool PlayerTwoShieldUsed;
 };
 
 HANDLE hInput, hOutput;
 GAMEINFO GameInfo;
+int PlayerOneScore = 0;
+int PlayerTwoScore = 0;
 
-void Movement(GAMEINFO &GameInfo);
+void InitializeGame(GAMEINFO& GameInfo);
+void Movement(GAMEINFO& GameInfo);
 void Draw(GAMEINFO);
 void Erase(GAMEINFO);
-int LaunchBullet(GAMEINFO &GameInfo, int);
-void LaunchBullet2(GAMEINFO &GameInfo, int);
-int Wait();
+void UpdateScore();
+void LaunchBullet(GAMEINFO& GameInfo, int);
+void GameLoop(GAMEINFO& GameInfo);
 
+int main() {
+    hInput = GetStdHandle(STD_INPUT_HANDLE);
+    hOutput = GetStdHandle(STD_OUTPUT_HANDLE);
 
-int main()
-{
-	GAMEINFO GameInfo;
+    SetConsoleMode(hOutput, ENABLE_PROCESSED_INPUT);
 
+    InitializeGame(GameInfo);
+    UpdateScore();
+    Draw(GameInfo);
 
+    while (1) {
+        GameLoop(GameInfo);
+    }
 
-	hInput = GetStdHandle(STD_INPUT_HANDLE);
-	hOutput = GetStdHandle(STD_OUTPUT_HANDLE);
-
-
-
-	SetConsoleMode(hOutput, ENABLE_PROCESSED_INPUT);
-
-	GameInfo.PlayerOnePosition.X = 19;
-	GameInfo.PlayerOnePosition.Y = 12;
-	GameInfo.PlayerTwoPosition.X = 61;
-	GameInfo.PlayerTwoPosition.Y = 12;
-	GameInfo.PlayerOneBullet.X = 0;
-	GameInfo.PlayerOneBullet.Y = 0;
-	GameInfo.PlayerTwoBullet.X = 79;
-	GameInfo.PlayerTwoBullet.Y = 0;
-	GameInfo.PlayerOneBullet2.X = 1;
-	GameInfo.PlayerOneBullet2.Y = 0;
-	GameInfo.PlayerTwoBullet2.X = 78;
-	GameInfo.PlayerTwoBullet2.Y = 0;
-	GameInfo.ZeroZero.X = 0;
-	GameInfo.ZeroZero.Y = 0;
-
-	int i;
-	GameInfo.ZeroZero.Y = 24;
-	for (i = 0; i < 79; i++) {
-		SetConsoleCursorPosition(hOutput, GameInfo.ZeroZero);
-		cout << ".";
-		GameInfo.ZeroZero.X++;
-	}
-
-	Draw(GameInfo);
-
-	while (1) {
-		Movement(GameInfo);
-	}
-
-	return 0;
+    return 0;
 }
 
-void Movement(GAMEINFO &GameInfo)
-{
-	INPUT_RECORD InputRecord;
-	DWORD Events = 0;
+void InitializeGame(GAMEINFO& GameInfo) {
+    GameInfo.PlayerOnePosition.X = 19;
+    GameInfo.PlayerOnePosition.Y = 12;
+    GameInfo.PlayerTwoPosition.X = 61;
+    GameInfo.PlayerTwoPosition.Y = 12;
+    GameInfo.PlayerOneBullets.clear();
+    GameInfo.PlayerTwoBullets.clear();
+    GameInfo.ZeroZero.X = 0;
+    GameInfo.ZeroZero.Y = 0;
+    GameInfo.PlayerOneShield = false;
+    GameInfo.PlayerTwoShield = false;
+    GameInfo.PlayerOneShieldUsed = false;
+    GameInfo.PlayerTwoShieldUsed = false;
 
-	ReadConsoleInput(hInput, &InputRecord, 1, &Events);
-
-	if (InputRecord.EventType == KEY_EVENT) {
-
-		if (InputRecord.Event.KeyEvent.wVirtualKeyCode == VK_Q && InputRecord.Event.KeyEvent.bKeyDown == 1) {
-			Erase(GameInfo);
-			GameInfo.PlayerOnePosition.Y--;
-			if (GameInfo.PlayerOnePosition.Y < 0)
-				GameInfo.PlayerOnePosition.Y++;
-			Draw(GameInfo);
-		}
-
-		if (InputRecord.Event.KeyEvent.wVirtualKeyCode == VK_A && InputRecord.Event.KeyEvent.bKeyDown == 1) {
-			Erase(GameInfo);
-			GameInfo.PlayerOnePosition.Y++;
-			if (GameInfo.PlayerOnePosition.Y > 24)
-				GameInfo.PlayerOnePosition.Y--;
-			Draw(GameInfo);
-		}
-
-		if (InputRecord.Event.KeyEvent.wVirtualKeyCode == VK_S && InputRecord.Event.KeyEvent.bKeyDown == 1) {
-			LaunchBullet(GameInfo, 1);
-		}
-
-		if (InputRecord.Event.KeyEvent.wVirtualKeyCode == VK_O && InputRecord.Event.KeyEvent.bKeyDown == 1) {
-			Erase(GameInfo);
-			GameInfo.PlayerTwoPosition.Y--;
-			if (GameInfo.PlayerTwoPosition.Y < 0)
-				GameInfo.PlayerTwoPosition.Y++;
-			Draw(GameInfo);
-		}
-
-		if (InputRecord.Event.KeyEvent.wVirtualKeyCode == VK_L && InputRecord.Event.KeyEvent.bKeyDown == 1) {
-			Erase(GameInfo);
-			GameInfo.PlayerTwoPosition.Y++;
-			if (GameInfo.PlayerTwoPosition.Y > 24)
-				GameInfo.PlayerTwoPosition.Y--;
-			Draw(GameInfo);
-		}
-
-		if (InputRecord.Event.KeyEvent.wVirtualKeyCode == VK_K && InputRecord.Event.KeyEvent.bKeyDown == 1) {
-			LaunchBullet(GameInfo, 2);
-		}
-
-		if (InputRecord.Event.KeyEvent.wVirtualKeyCode == VK_ESCAPE)
-			exit(0);
-
-	}
-	FlushConsoleInputBuffer(hInput);
+    system("cls");
 }
 
-void Draw(GAMEINFO GameInfo)
-{
-	SetConsoleCursorPosition(hOutput, GameInfo.PlayerOnePosition);
-	cout << "|";
-
-	SetConsoleCursorPosition(hOutput, GameInfo.PlayerTwoPosition);
-	cout << "|";
-
-	SetConsoleCursorPosition(hOutput, GameInfo.PlayerOneBullet);
-	cout << ".";
-
-	SetConsoleCursorPosition(hOutput, GameInfo.PlayerTwoBullet);
-	cout << ".";
-
-	SetConsoleCursorPosition(hOutput, GameInfo.PlayerOneBullet2);
-	cout << ".";
-
-	SetConsoleCursorPosition(hOutput, GameInfo.PlayerTwoBullet2);
-	cout << ".";
-
-	GameInfo.ZeroZero.X = 0;
-	GameInfo.ZeroZero.Y = 0;
-
-	int i;
-	for (i = 0; i < 79; i++) {
-		SetConsoleCursorPosition(hOutput, GameInfo.ZeroZero);
-		cout << ".";
-		GameInfo.ZeroZero.X++;
-	}
-
+void UpdateScore() {
+    COORD ScorePos = { 0, 0 };
+    SetConsoleCursorPosition(hOutput, ScorePos);
+    cout << "Player 1 Score: " << PlayerOneScore << " | Player 2 Score: " << PlayerTwoScore << endl;
 }
 
-void Erase(GAMEINFO GameInfo)
-{
-	SetConsoleCursorPosition(hOutput, GameInfo.PlayerOnePosition);
-	cout << " ";
+void Draw(GAMEINFO GameInfo) {
+    COORD boundary = { 0, 1 };
+    SetConsoleCursorPosition(hOutput, boundary);
+    for (int i = 0; i < 80; i++) cout << "-";
 
-	SetConsoleCursorPosition(hOutput, GameInfo.PlayerTwoPosition);
-	cout << " ";
+    SetConsoleCursorPosition(hOutput, GameInfo.PlayerOnePosition);
+    cout << "|";
 
-	SetConsoleCursorPosition(hOutput, GameInfo.PlayerOneBullet);
-	cout << " ";
+    SetConsoleCursorPosition(hOutput, GameInfo.PlayerTwoPosition);
+    cout << "|";
 
-	SetConsoleCursorPosition(hOutput, GameInfo.PlayerTwoBullet);
-	cout << " ";
+    for (const auto& bullet : GameInfo.PlayerOneBullets) {
+        SetConsoleCursorPosition(hOutput, bullet);
+        cout << ".";
+    }
 
-	SetConsoleCursorPosition(hOutput, GameInfo.PlayerOneBullet2);
-	cout << " ";
+    for (const auto& bullet : GameInfo.PlayerTwoBullets) {
+        SetConsoleCursorPosition(hOutput, bullet);
+        cout << ".";
+    }
 
-	SetConsoleCursorPosition(hOutput, GameInfo.PlayerTwoBullet2);
-	cout << " ";
+    if (GameInfo.PlayerOneShield) {
+        SetConsoleCursorPosition(hOutput, { (short)(GameInfo.PlayerOnePosition.X + 1), GameInfo.PlayerOnePosition.Y });
+        cout << "O";
+    }
+
+    if (GameInfo.PlayerTwoShield) {
+        SetConsoleCursorPosition(hOutput, { (short)(GameInfo.PlayerTwoPosition.X - 1), GameInfo.PlayerTwoPosition.Y });
+        cout << "O";
+    }
+
+    boundary = { 0, 24 };
+    SetConsoleCursorPosition(hOutput, boundary);
+    for (int i = 0; i < 80; i++) cout << "-";
 }
 
-int LaunchBullet(GAMEINFO &GameInfo, int PlayerNumber)
-{
-	int i;
-	if (PlayerNumber == 1) {
-		GameInfo.PlayerOneBullet.Y = GameInfo.PlayerOnePosition.Y;
-		GameInfo.PlayerOneBullet.X = GameInfo.PlayerOnePosition.X + 1;
-		Draw(GameInfo);
-		Erase(GameInfo);
-		for (i = 0; i < 77; i++) {
-			GameInfo.PlayerOneBullet.X += 1;
-			Draw(GameInfo);
+void Erase(GAMEINFO GameInfo) {
+    SetConsoleCursorPosition(hOutput, GameInfo.PlayerOnePosition);
+    cout << " ";
 
-			int move;
-			move = Wait();
-			switch (move) {
-			case 1:
-				Erase(GameInfo);
-				GameInfo.PlayerOnePosition.Y--;
-				if (GameInfo.PlayerOnePosition.Y < 0)
-					GameInfo.PlayerOnePosition.Y++;
-				break;
-			case 2:
-				Erase(GameInfo);
-				GameInfo.PlayerOnePosition.Y++;
-				if (GameInfo.PlayerOnePosition.Y > 24)
-					GameInfo.PlayerOnePosition.Y--;
-				break;
-			case 3:
-				Erase(GameInfo);
-				GameInfo.PlayerTwoPosition.Y--;
-				if (GameInfo.PlayerTwoPosition.Y < 0)
-					GameInfo.PlayerTwoPosition.Y++;
-				break;
-			case 4:
-				Erase(GameInfo);
-				GameInfo.PlayerTwoPosition.Y++;
-				if (GameInfo.PlayerTwoPosition.Y > 24)
-					GameInfo.PlayerTwoPosition.Y--;
-				break;
-			case 5:
-				LaunchBullet2(GameInfo, 1);
-				return 0;
-				break;
-			case 6:
-				LaunchBullet2(GameInfo, 2);
-				return 0;
-				break;
-			}
+    SetConsoleCursorPosition(hOutput, GameInfo.PlayerTwoPosition);
+    cout << " ";
 
-			Draw(GameInfo);
-			Erase(GameInfo);
-			if (GameInfo.PlayerOneBullet.X == GameInfo.PlayerTwoPosition.X)
-				if (GameInfo.PlayerOneBullet.Y == GameInfo.PlayerTwoPosition.Y) {
-					system("cls");
-					cout << "\aPlayer 1 Wins" << endl;
-					system("pause");
-					exit(0);
-				}
-		}
-		GameInfo.PlayerOneBullet.Y = 0;
-		GameInfo.PlayerOneBullet.X = 0;
-		Draw(GameInfo);
-	}
-	if (PlayerNumber == 2) {
-		GameInfo.PlayerTwoBullet.Y = GameInfo.PlayerTwoPosition.Y;
-		GameInfo.PlayerTwoBullet.X = GameInfo.PlayerTwoPosition.X - 1;
-		Draw(GameInfo);
-		Erase(GameInfo);
-		for (i = 0; i < 77; i++) {
-			GameInfo.PlayerTwoBullet.X -= 1;
-			Draw(GameInfo);
+    for (const auto& bullet : GameInfo.PlayerOneBullets) {
+        SetConsoleCursorPosition(hOutput, bullet);
+        cout << " ";
+    }
 
-			int move;
-			move = Wait();
-			switch (move) {
-			case 1:
-				Erase(GameInfo);
-				GameInfo.PlayerOnePosition.Y--;
-				if (GameInfo.PlayerOnePosition.Y < 0)
-					GameInfo.PlayerOnePosition.Y++;
-				break;
-			case 2:
-				Erase(GameInfo);
-				GameInfo.PlayerOnePosition.Y++;
-				if (GameInfo.PlayerOnePosition.Y > 24)
-					GameInfo.PlayerOnePosition.Y--;
-				break;
-			case 3:
-				Erase(GameInfo);
-				GameInfo.PlayerTwoPosition.Y--;
-				if (GameInfo.PlayerTwoPosition.Y < 0)
-					GameInfo.PlayerTwoPosition.Y++;
-				break;
-			case 4:
-				Erase(GameInfo);
-				GameInfo.PlayerTwoPosition.Y++;
-				if (GameInfo.PlayerTwoPosition.Y > 24)
-					GameInfo.PlayerTwoPosition.Y--;
-				break;
-			case 5:
-				LaunchBullet2(GameInfo, 1);
-				return 0;
-				break;
-			case 6:
-				LaunchBullet2(GameInfo, 2);
-				return 0;
-				break;
-			}
+    for (const auto& bullet : GameInfo.PlayerTwoBullets) {
+        SetConsoleCursorPosition(hOutput, bullet);
+        cout << " ";
+    }
 
-			Draw(GameInfo);
-			Erase(GameInfo);
-			if (GameInfo.PlayerTwoBullet.X == GameInfo.PlayerOnePosition.X)
-				if (GameInfo.PlayerTwoBullet.Y == GameInfo.PlayerOnePosition.Y) {
-					system("cls");
-					cout << "\aPlayer 2 Wins" << endl;
-					system("pause");
-					exit(0);
-				}
-		}
-		GameInfo.PlayerTwoBullet.Y = 0;
-		GameInfo.PlayerTwoBullet.X = 79;
-		Draw(GameInfo);
-	}
-	return 0;
+    if (GameInfo.PlayerOneShield) {
+        SetConsoleCursorPosition(hOutput, { (short)(GameInfo.PlayerOnePosition.X + 1), GameInfo.PlayerOnePosition.Y });
+        cout << " ";
+    }
+
+    if (GameInfo.PlayerTwoShield) {
+        SetConsoleCursorPosition(hOutput, { (short)(GameInfo.PlayerTwoPosition.X - 1), GameInfo.PlayerTwoPosition.Y });
+        cout << " ";
+    }
 }
 
-int Wait()
-{
-	INPUT_RECORD InputRecord;
-	DWORD Events = 0;
-
-	if (WAIT_TIMEOUT == WaitForSingleObject(hInput, 1))
-		return 0;
-	ReadConsoleInput(hInput, &InputRecord, 1, &Events);
-
-	if (InputRecord.EventType == KEY_EVENT) {
-		if (InputRecord.Event.KeyEvent.wVirtualKeyCode == VK_Q && InputRecord.Event.KeyEvent.bKeyDown == 1)
-			return 1;
-
-		if (InputRecord.Event.KeyEvent.wVirtualKeyCode == VK_A && InputRecord.Event.KeyEvent.bKeyDown == 1)
-			return 2;
-
-		if (InputRecord.Event.KeyEvent.wVirtualKeyCode == VK_O && InputRecord.Event.KeyEvent.bKeyDown == 1)
-			return 3;
-
-		if (InputRecord.Event.KeyEvent.wVirtualKeyCode == VK_L && InputRecord.Event.KeyEvent.bKeyDown == 1)
-			return 4;
-
-		if (InputRecord.Event.KeyEvent.wVirtualKeyCode == VK_S && InputRecord.Event.KeyEvent.bKeyDown == 1)
-			return 5;
-
-		if (InputRecord.Event.KeyEvent.wVirtualKeyCode == VK_K && InputRecord.Event.KeyEvent.bKeyDown == 1)
-			return 6;
-	}
-	FlushConsoleInputBuffer(hInput);
-	return 0;
+void Movement(GAMEINFO& GameInfo) {
+    if (_kbhit()) {
+        switch (_getch()) {
+        case 'q':
+            Erase(GameInfo);
+            GameInfo.PlayerOnePosition.Y--;
+            if (GameInfo.PlayerOnePosition.Y < 2)
+                GameInfo.PlayerOnePosition.Y++;
+            Draw(GameInfo);
+            break;
+        case 'a':
+            Erase(GameInfo);
+            GameInfo.PlayerOnePosition.Y++;
+            if (GameInfo.PlayerOnePosition.Y > 23)
+                GameInfo.PlayerOnePosition.Y--;
+            Draw(GameInfo);
+            break;
+        case 'd':
+            if (!GameInfo.PlayerOneShieldUsed) {
+                GameInfo.PlayerOneShield = true;
+                GameInfo.PlayerOneShieldUsed = true;
+                Draw(GameInfo);
+            }
+            break;
+        case 's':
+            LaunchBullet(GameInfo, 1);
+            break;
+        case 'o':
+            Erase(GameInfo);
+            GameInfo.PlayerTwoPosition.Y--;
+            if (GameInfo.PlayerTwoPosition.Y < 2)
+                GameInfo.PlayerTwoPosition.Y++;
+            Draw(GameInfo);
+            break;
+        case 'l':
+            Erase(GameInfo);
+            GameInfo.PlayerTwoPosition.Y++;
+            if (GameInfo.PlayerTwoPosition.Y > 23)
+                GameInfo.PlayerTwoPosition.Y--;
+            Draw(GameInfo);
+            break;
+        case 'j':
+            if (!GameInfo.PlayerTwoShieldUsed) {
+                GameInfo.PlayerTwoShield = true;
+                GameInfo.PlayerTwoShieldUsed = true;
+                Draw(GameInfo);
+            }
+            break;
+        case 'k':
+            LaunchBullet(GameInfo, 2);
+            break;
+        case 27: 
+            exit(0);
+        }
+    }
 }
 
-void LaunchBullet2(GAMEINFO &GameInfo, int PlayerNumber)
-{
-	if (PlayerNumber == 1) {
-		GameInfo.PlayerOneBullet2.X = GameInfo.PlayerOnePosition.X + 1;
-		GameInfo.PlayerOneBullet2.Y = GameInfo.PlayerOnePosition.Y;
+void GameLoop(GAMEINFO& GameInfo) {
+    Movement(GameInfo);
 
-		Draw(GameInfo);
-		Erase(GameInfo);
-		int i;
-		for (i = 0; i < 77; i++) {
-			GameInfo.PlayerOneBullet.X += 1;
-			GameInfo.PlayerOneBullet2.X += 1;
-			GameInfo.PlayerTwoBullet.X -= 1;
-			GameInfo.PlayerTwoBullet2.X -= 1;
-			Draw(GameInfo);
+    if (!GameInfo.PlayerOneBullets.empty()) {
+        Erase(GameInfo);
+        for (auto& bullet : GameInfo.PlayerOneBullets) {
+            bullet.X++;
+            if (bullet.X == GameInfo.PlayerTwoPosition.X && bullet.Y == GameInfo.PlayerTwoPosition.Y) {
+                if (GameInfo.PlayerTwoShield) {
+                    GameInfo.PlayerTwoShield = false;
+                }
+                else {
+                    PlayerOneScore++;
+                    InitializeGame(GameInfo);
+                    UpdateScore();
+                }
+            }
+            else if (bullet.X >= 79) {
+                bullet.X = 0;
+                bullet.Y = 0;
+            }
+        }
 
-			int move;
-			move = Wait();
-			switch (move) {
-			case 1:
-				Erase(GameInfo);
-				GameInfo.PlayerOnePosition.Y--;
-				if (GameInfo.PlayerOnePosition.Y < 0)
-					GameInfo.PlayerOnePosition.Y++;
-				break;
-			case 2:
-				Erase(GameInfo);
-				GameInfo.PlayerOnePosition.Y++;
-				if (GameInfo.PlayerOnePosition.Y > 24)
-					GameInfo.PlayerOnePosition.Y--;
-				break;
-			case 3:
-				Erase(GameInfo);
-				GameInfo.PlayerTwoPosition.Y--;
-				if (GameInfo.PlayerTwoPosition.Y < 0)
-					GameInfo.PlayerTwoPosition.Y++;
-				break;
-			case 4:
-				Erase(GameInfo);
-				GameInfo.PlayerTwoPosition.Y++;
-				if (GameInfo.PlayerTwoPosition.Y > 24)
-					GameInfo.PlayerTwoPosition.Y--;
-				break;
-			}
+        GameInfo.PlayerOneBullets.erase(remove_if(GameInfo.PlayerOneBullets.begin(), GameInfo.PlayerOneBullets.end(),
+            [](COORD bullet) { return bullet.X == 0 && bullet.Y == 0; }), GameInfo.PlayerOneBullets.end());
+        Draw(GameInfo);
+    }
 
-			Draw(GameInfo);
-			Erase(GameInfo);
-			if (GameInfo.PlayerOneBullet.X == GameInfo.PlayerTwoPosition.X)
-				if (GameInfo.PlayerOneBullet.Y == GameInfo.PlayerTwoPosition.Y) {
-					system("cls");
-					cout << "\aPlayer 1 Wins" << endl;
-					system("pause");
-					exit(0);
-				}
-			if (GameInfo.PlayerOneBullet2.X == GameInfo.PlayerTwoPosition.X)
-				if (GameInfo.PlayerOneBullet2.Y == GameInfo.PlayerTwoPosition.Y) {
-					system("cls");
-					cout << "\aPlayer 1 Wins" << endl;
-					system("pause");
-					exit(0);
-				}
-		}
-		GameInfo.PlayerOneBullet.Y = 0;
-		GameInfo.PlayerOneBullet.X = 0;
-		GameInfo.PlayerOneBullet2.Y = 0;
-		GameInfo.PlayerOneBullet2.X = 1;
-		Draw(GameInfo);
-	}
+    if (!GameInfo.PlayerTwoBullets.empty()) {
+        Erase(GameInfo);
+        for (auto& bullet : GameInfo.PlayerTwoBullets) {
+            bullet.X--;
+            if (bullet.X == GameInfo.PlayerOnePosition.X && bullet.Y == GameInfo.PlayerOnePosition.Y) {
+                if (GameInfo.PlayerOneShield) {
+                    GameInfo.PlayerOneShield = false;
+                }
+                else {
+                    PlayerTwoScore++;
+                    InitializeGame(GameInfo);
+                    UpdateScore();
+                }
+            }
+            else if (bullet.X <= 0) {
+                bullet.X = 79;
+                bullet.Y = 0;
+            }
+        }
+ 
+        GameInfo.PlayerTwoBullets.erase(remove_if(GameInfo.PlayerTwoBullets.begin(), GameInfo.PlayerTwoBullets.end(),
+            [](COORD bullet) { return bullet.X == 79 && bullet.Y == 0; }), GameInfo.PlayerTwoBullets.end());
+        Draw(GameInfo);
+    }
 
-	if (PlayerNumber == 2) {
-		GameInfo.PlayerTwoBullet2.Y = GameInfo.PlayerTwoPosition.Y;
-		GameInfo.PlayerTwoBullet2.X = GameInfo.PlayerTwoPosition.X - 1;
-		Draw(GameInfo);
-		Erase(GameInfo);
-		int i;
-		for (i = 0; i < 77; i++) {
-			GameInfo.PlayerTwoBullet.X -= 1;
-			GameInfo.PlayerTwoBullet2.X -= 1;
-			GameInfo.PlayerOneBullet.X += 1;
-			GameInfo.PlayerOneBullet2.X += 1;
-			Draw(GameInfo);
-
-			int move;
-			move = Wait();
-			switch (move) {
-			case 1:
-				Erase(GameInfo);
-				GameInfo.PlayerOnePosition.Y--;
-				if (GameInfo.PlayerOnePosition.Y < 0)
-					GameInfo.PlayerOnePosition.Y++;
-				break;
-			case 2:
-				Erase(GameInfo);
-				GameInfo.PlayerOnePosition.Y++;
-				if (GameInfo.PlayerOnePosition.Y > 24)
-					GameInfo.PlayerOnePosition.Y--;
-				break;
-			case 3:
-				Erase(GameInfo);
-				GameInfo.PlayerTwoPosition.Y--;
-				if (GameInfo.PlayerTwoPosition.Y < 0)
-					GameInfo.PlayerTwoPosition.Y++;
-				break;
-			case 4:
-				Erase(GameInfo);
-				GameInfo.PlayerTwoPosition.Y++;
-				if (GameInfo.PlayerTwoPosition.Y > 24)
-					GameInfo.PlayerTwoPosition.Y--;
-				break;
-			}
-
-			Draw(GameInfo);
-			Erase(GameInfo);
-			if (GameInfo.PlayerTwoBullet.X == GameInfo.PlayerOnePosition.X)
-				if (GameInfo.PlayerTwoBullet.Y == GameInfo.PlayerOnePosition.Y) {
-					system("cls");
-					cout << "\aPlayer 2 Wins" << endl;
-					system("pause");
-					exit(0);
-				}
-			if (GameInfo.PlayerTwoBullet2.X == GameInfo.PlayerOnePosition.X)
-				if (GameInfo.PlayerTwoBullet2.Y == GameInfo.PlayerOnePosition.Y) {
-					system("cls");
-					cout << "\aPlayer 2 Wins" << endl;
-					system("pause");
-					exit(0);
-				}
-		}
-		GameInfo.PlayerOneBullet.Y = 0;
-		GameInfo.PlayerOneBullet.X = 0;
-		GameInfo.PlayerOneBullet2.Y = 0;
-		GameInfo.PlayerOneBullet2.X = 1;
-		Draw(GameInfo);
-	}
+    Sleep(50); 
 }
 
-
-
+void LaunchBullet(GAMEINFO& GameInfo, int PlayerNumber) {
+    COORD bullet;
+    if (PlayerNumber == 1) {
+        bullet.Y = GameInfo.PlayerOnePosition.Y;
+        bullet.X = GameInfo.PlayerOnePosition.X + 1;
+        GameInfo.PlayerOneBullets.push_back(bullet);
+    }
+    if (PlayerNumber == 2) {
+        bullet.Y = GameInfo.PlayerTwoPosition.Y;
+        bullet.X = GameInfo.PlayerTwoPosition.X - 1;
+        GameInfo.PlayerTwoBullets.push_back(bullet);
+    }
+}
